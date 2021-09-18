@@ -1,0 +1,71 @@
+[ + ] HEAP [ + ]
+
+mmap() - allocation size muste be multiple of 4096 bytes;
+       - crazy slow ( requires kernel )
+
+*Allocators*:
+General Purpose:
+Doug Lea (pictured) releases dlmalloc into public domain in 1987.
+
+Linux:
+ptmalloc (Posix Thread aware fork of dlmalloc)
+
+FreeBSD:
+jemalloc (also used in Firefox, Android)
+
+Windows:
+Segment Heap, NT Heap
+
+Kernel allocators:
+kmalloc (Linux kernel memory allocator)
+kalloc (iOS kernel memory allocator)
+
+What heap do:
+	- malloc() - allocates a some memory
+	- free() - free a prior allocated chunk
+	- realloc() - change the size of an allocation
+	- calloc() - allocate and zero-out memory
+
+The Data Segment:
+historic oddity from segmented memory spaces of yore
+with ASLR, placed randomly into memory near-ish the PIE base
+starts out with a size of 0
+managed by the brk and sbrk system calls:
+sbrk(NULL) returns the end of the data segment
+sbrk(delta) expands the end of the data segment by delta bytes
+brk(addr) expands the end of the data segment to addr
+
+tcache - speed up repeated ( small ) allocations in a single thread
+
+mchunk_size:
+	last 3 bits are flags:
+		- 0 prev_in_use
+		- 1 is_mapped
+		- 2 non_main_arena
+
+chunk sizes are multiples of 0x10
+
+Metadata: Different caches:
+
+Goals:
+	Modify arbitrary memory
+	overlapping allocation
+	...
+
+fd - forword
+bk - backword
+
+Unlink attack:
+	take ahead and behind
+	chunk-fd-bk = chunk-bk
+	chunk-bk-fd = chunk-fd
+	You can overwrite an arbitrary location in memory with an arbitrary pointer ( but valid ).
+
+House of Spirit:
+1. forge something that looks like a chunk
+2. free() it.
+3. the next malloc() will return that chunk to you !
+with a pointer overwrite, can be used to later malloc() a stack pointer.
+can be done with or withour tcache
+
+The min chunk is 24 bytes...3*8

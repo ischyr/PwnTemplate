@@ -1,0 +1,6 @@
+b *main+addr ( where is the xor RCX )
+r
+give it the offset of ex: %11$lx
+Some AAAA
+then it hits the b*
+p $rcx and see if the canary is the same

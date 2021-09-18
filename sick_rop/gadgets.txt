@@ -1,0 +1,20 @@
+Gadgets information
+============================================================
+0x0000000000401012 : and al, 0x10 ; syscall
+0x000000000040100d : and al, 8 ; mov rdx, qword ptr [rsp + 0x10] ; syscall
+0x0000000000401044 : call qword ptr [rax + 0x41]
+0x000000000040104c : dec ecx ; ret
+0x000000000040100c : je 0x40103a ; or byte ptr [rax - 0x75], cl ; push rsp ; and al, 0x10 ; syscall
+0x0000000000401023 : je 0x401051 ; or byte ptr [rax - 0x75], cl ; push rsp ; and al, 0x10 ; syscall
+0x0000000000401054 : jmp 0x40104f
+0x000000000040104d : leave ; ret
+0x0000000000401010 : mov edx, dword ptr [rsp + 0x10] ; syscall
+0x000000000040100b : mov esi, dword ptr [rsp + 8] ; mov rdx, qword ptr [rsp + 0x10] ; syscall
+0x000000000040100f : mov rdx, qword ptr [rsp + 0x10] ; syscall
+0x000000000040100e : or byte ptr [rax - 0x75], cl ; push rsp ; and al, 0x10 ; syscall
+0x0000000000401011 : push rsp ; and al, 0x10 ; syscall
+0x0000000000401016 : ret
+0x0000000000401049 : retf 0xffff
+0x0000000000401014 : syscall
+
+Unique gadgets found: 16

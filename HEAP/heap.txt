@@ -1,0 +1,91 @@
+Heap exploit =  deci ideea e ca daca ai vreun overflow sau vreun double free, intentia ta e sa faci un chunk fake si sa il bagi intr-o lista de aia cu chunk-uri free
+iar la urmatorul malloc primesti chunk-ul fals, cu o adresa arbitrara
+si de aici continui cu exploit clasic
+overwrite pe RIP (desi e cam greu), GOT, malloc hook sau orice altceva care te lasa sa preiei executia
+
+Heap exploitation techniques:
+
+House of Spirit - freeing a forget chunk in order to obtain arbitrary write on the stack/heap/bss
+House of Lore - overwrite the backward pointer of a fastbin entry in order to allocate a fake chunk
+House of Force - alter the top chunk's header in order to get an arbitrary write on the heap
+House of Einherjar - one byte overwrite 
+
+Source: https://heap-exploitation.dhavalkapil.com/attacks/house_of_einherjar.html
+Further reading: https://dl.packetstormsecurity.net/papers/attack/MallocMaleficarum.txt
+
+pwnable.kr: uaf, unlink
+pwnable.tw: hacknote, tcachetear, spirited_away
+###############################################
+
+Ptmalloc is the memory allocator used in libc.
+The basic unit of memory management in ptmalloc is malloc_chunk. 
+	* It is consisted of 6 metadata field. As explained below, the size of each metadata is 4 bytes long on x86 platform and 8 bytes long on x64 platform.
+
+In ptmalloc, a chunk refers to a memory area allocated via memory management allocator and is used to store the metadata and application data.
+In ptmalloc, there are three basic types of chunks in ptmalloc: allocated chunk, freed chunk and top chunk.
+
+fd means the next chunk
+bk means backward
+
+Status of chunk:
+A: set if the chunk was obtained from a non-main arena.
+M: set if the chunk was obtained with mmap().
+P: set if previous adjacent chunk is in use.
+
+Allocated Chunk:
+For an allocated chunk, the size of previous chunk will be set if previous adjacent chunk is freed and P is unset. In the next adjacent chunk, P will be set. One thing to note is that is the current chunk is an allocated chunk, mchunk_prev_size will be used to store application data. Such feature is always combined with off-by-one error in CTF challenge.
+
+Freed Chunk:
+For an freed chunk, the size of previous chunk will be set if previous adjacent chunk is freed and P is unset. In the next adjacent chunk, P will be unset and mchunk_prev_size will be set to the size of current chunk. Forward pointer and back pointer will be set according to the deallocation strategy, which is decided by the size of current chunk and discussed next.
+
+EX:
+* /* conversion from malloc headers to user pointers, and back */
+#define chunk2mem(p)   ((void*)((char*)(p) + 2*SIZE_SZ))
+#define mem2chunk(mem) ((mchunkptr)((char*)(mem) - 2*SIZE_SZ))
+ 
+/* size field is or'ed with PREV_INUSE when previous adjacent chunk in use */
+#define PREV_INUSE 0x1
+( Here P is 0x1 if the adjacent chunk is in use and 0x0 if the adjacent chunk is freed.  )
+
+Top Chunk:
+In top chunk, the size of chunk represents the remaining size of main arena at present. If the new size if larger than the current size, brk() or mmap() will be called to enlarge the top chunk.
+
+There are four types of bins to store different types of freed chunk: Fastbin, Unsorted bin, Small bins, Large bins.
+Structure malloc_state is used to store the top chunk pointer, last remainder, fast bins and bins
+
+A bin is a list (doubly or singly linked list) of free (non-allocated) chunks. Bins are differentiated based on the size of chunks they contain:
+
+Fast bin:
+	1. Chunks in fast bin are maintained via a singly linked list.
+	2. Size of chunk in fast bin must be less than 0x40.
+	3. The P bit of next adjacent chunk of the current chunk in fast bin will not be unset.
+	3. When retrieving chunks from fast bin, the allocator follows the LIFO rule.
+
+Unsorted bin:
+	1. Chunks in unsorted bin are maintained via a doubly linked list.
+	2. Size of chunk in unsorted bin must be larger than 0x40.
+	3. When aallocating, the allocator will iterate over the unsorted chunks in the unsorted bin. After finding the fit chunk, remove the chunk from the unsorted chunk and process the chunk.
+
+Small bin:
+	1. Chunks in small bin are also maintained via a doubly linked list.
+	2. Size of chunk in small bin must be less than 0x200.
+	3. Different from unsorted chunk, the freed chunk will not be inserted into the small bin after deallocation. Only when a splitted chunk from unsorted bin will be inserted into the small bin (more details will be give in Part 2 of this series tutorial).
+	4. When retrieving chunks from small bin, the allocator follows the FIFO rule.
+
+Large bin:
+	1. Chunks in large bin are also maintained via a doubly linked list.
+	2. Size of chunk in large bin must be larger than 0x200.
+	3. Except for fwd and bck pointer in large chunk, there are also fd_nextsize and bck_nextsize to denote the large chunk with different size (sorted by descending order).
+	4. Similar to small chunk, the freed large chunk will not be inserted into the small bin after deallocation. Only when a splitted chunk from unsorted bin will be inserted into the large bin.
+	5. When retrieving chunks from large bin, the allocator follows the “best fit” rule, i.e. the smallest chunk whose size is larger than the requested size.
+
+* brk() and sbrk() change the location of the program break, which
+       defines the end of the process's data segment (i.e., the program
+       break is the first location after the end of the uninitialized data
+       segment).  Increasing the program break has the effect of allocating
+       memory to the process; decreasing the break deallocates memory.
+
+* mmap() creates a new mapping in the virtual address space of the
+       calling process.  The starting address for the new mapping is
+       specified in addr.  The length argument specifies the length of the
+       mapping (which must be greater than 0).

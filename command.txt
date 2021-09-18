@@ -1,0 +1,1 @@
+socat tcp-listen:5555,reuseaddr,fork, exec:'./format'

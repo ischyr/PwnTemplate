@@ -1,0 +1,268 @@
+[ + ] Everything [ + ]
+
+Format String Exploitation:
+	* %d -> decimal
+	* %s -> string ( reads string from memory )
+	* %x -> hexadecimal
+	* %n -> number of bytes written so far
+
+NOTE:  Drivers are called drivers because the kernel literally uses them to drive the hardware. 
+
+An assembly program can be divided into three sections:
+
+	* data section
+	* bss section
+	* text section
+
+-> The data section is used for declaring initialized data or constants. This data does not change at runtime. You can declare various constant values, file names, or buffer size, etc., in this section.
+The syntax for declaring data section is −
+	[ section.data ]
+
+-> The bss section is used for declaring variables. The syntax for declaring bss section is −
+	[ section.bss ]
+
+-> The text section is used for keeping the actual code. This section must begin with the declaration global _start, which tells the kernel where the program execution begins.
+	[ section.text
+		global _start
+	_start:
+	]
+
+Following are some examples of typical assembly language statements:
+	* INC COUNT ( increment the memory variable COUNT )
+	* MOV TOTAL, 48 ( transfer the value 48 to the memory variable TOTAL )
+	* ADD AH, BH ( add the content of the BH register to the AH register )
+
+edx -> message lenght
+ecx -> message to write
+ebx -> file descriptor ( stdout: EXEMPLE )
+eax -> system call number ( sys_write: EXAMPLE )
+int 0x80 -> call kernel
+#######################
+mov eax,1 -> system call number (sys_exit)
+int 0x80  -> call kernel
+#######################
+System call numbers:
+	* Those are on EAX register * 
+	* 1 -> sys_exit
+	* 2 -> sys_fork
+	* 3 -> sys_read
+	* 4 -> sys_write
+	* 5 -> sys_open
+	* 6 -> sys_close
+	* 8 -> sys_creat
+	* 19 -> sys_lseek 
+#######################
+The MOV Instruction:
+	* the MOV instruction is used for moving data from one storage space to another.
+	* MOV  destination, source
+
+Specifiers:
+	BYTE -> 1
+	WORD -> 2
+	DWORD -> 4
+	QWORD -> 8
+	TBYTE -> 10
+###################
+EXEMPLE:
+
+section .text
+	global _start
+
+_start:
+	mov [name], dword 'Zara Ali'
+	mov edx, 8
+	mov ecx, name
+	mov ebx, 1
+	mov eax, 4
+	int 0x80
+	mov eax, 1
+	int 0x80
+
+section data
+	name db 'Nuha Ali'
+###################
+Variables:
+	* db -> define byte ( 1 byte )
+	* dw -> define word ( 2 bytes )
+	* dd -> define doubleword ( 4 bytes )
+	* dq -> define quadword ( 8 bytes )
+	* dt -> define ten bytes ( 10 bytes )
+
+	* RESB -> Reserve a Byte
+	* RESW -> Reserve a Word
+	* RESD -> Reserve a Doubleword
+	* RESQ -> Reserve a Quadword
+	* REST -> Reserve a Ten Bytes
+###################
+Initializations:
+	* stars   times 9 db '*'
+	* The following program displays 9 asterisks on the screen
+###################
+Constants:
+	* The EQU Directive:
+		-> The EQU directive is used for defining constants.
+		EXEMPLE:
+			- TOTAL_STUDENTS equ 50
+			- len1 equ $ - msg1	
+			- SYS_WRITE equ 4
+	* The INC Instruction:
+		-> The INC instruction is used for incrementing an operand by one.
+			EXEMPLE:
+				- INC EBX	     ; Increments 32-bit register
+				- INC DL       ; Increments 8-bit register
+				- INC [count]  ; Increments the count variable
+
+
+	* The DEC Instruction:
+		-> The DEC instruction is used for decrementing an operand by one.
+			EXEMPLE:
+				- DEC EBX
+
+	* The ADD and SUB Instructions:
+		-> The ADD and SUB instructions are used for performing simple addition/subtraction of binary data in byte, word and doubleword size, i.e., for adding or subtracting 8-bit, 16-bit or 32-bit operands, respectively.
+			EXEMPLE:
+				- ADD/SUB	destination, source
+###################
+STD's:
+	* STDOUT -> 1
+	* STDIN -> 0
+	* STDERR -> 2
+###################
+The MUL/IMUL Instruction:
+	* There are two instructions for multiplying binary data.
+	* NOTE: The MUL instruction always multiples EAX by whatever value is passed after it. The answer is left in EAX.
+	* The product is in AX. ( one-word ) 
+
+The DIV/IDIV Instructions:
+	* The division operation generates two elements - a quotient and a remainder.
+	* The same as MUL/IMUL instructions.
+###################
+Logical Instructions:
+	* AND, OR, XOR, TEST, NOT
+###################
+Conditions:
+	* Unconditional jump
+		-> This is performed by the JMP instruction. Conditional execution often involves a transfer of control to the address of an instruction that does not follow the currently executing instruction.
+	* Conditional jump
+		-> This is performed by a set of jump instructions j<condition> depending upon the condition.
+	* CMP Instruction
+		-> The CMP instruction compares two operands. It is generally used in conditional execution. This instruction basically subtracts one operand from the other for comparing whether the operands are equal or not.
+			EXEMPLE:
+				- INC	EDX
+				- CMP	EDX, 10	; Compares whether the counter has reached 10
+				- JLE	LP1     ; If it is less than or equal to 10, then jump to LP1
+	* Conditional Jump
+		* JE/JZ -> Jump Equal or Jump Zero
+		* JNE/JNZ -> Jump not Equal or Jump Not Zero
+		* JG/JNLE -> Jump Greater or Jump Not Less/Equal
+		* JGE/JNL -> Jump Greater/Equal or Jump Not Less
+		* JL/JNGE -> Jump Less or Jump Not Greater/Equal
+		* JLE/JNG -> Jump Less/Equal or Jump Not Greater
+			EXEMPLE:
+				-> CMP	AL, BL
+				-> JE	EQUAL
+				-> CMP	AL, BH
+				-> JE	EQUAL
+				-> CMP	AL, CL
+				-> JE	EQUAL
+				-> NON_EQUAL: ...
+				-> EQUAL: ...
+				; compares BL with AL, if they are EQUAL JUMP to EQUAL table.
+###################
+Loops:
+	* LOOP label
+		EXEMPLE:
+l1:
+        mov [num], eax
+        mov eax, 4
+        mov ebx, 1
+        push ecx
+
+        mov ecx, num
+        mov edx, 1
+        int 0x80
+
+        mov eax, [num]
+        sub eax, '0'
+        inc eax
+        add eax, '0'
+        pop ecx
+        loop l1
+###################
+ASCII representations:
+	
+    * AAA − ASCII Adjust After Addition
+
+    * AAS − ASCII Adjust After Subtraction
+
+    * AAM − ASCII Adjust After Multiplication
+
+    * AAD − ASCII Adjust Before Division
+###################
+Arrays:
+	* NUMBERS DW  34,  45,  56,  67,  75, 89
+	* INVENTORY TIMES 8 DW 0
+###################
+Procedures:
+	* CALL proc_name
+	* The called procedure returns the control to the calling procedure by using the RET instruction.
+###################
+Stacks Data Structure:
+	* PUSH    operand
+	* POP     address/register
+	* The registers SS and ESP (or SP) are used for implementing the stack.
+	
+	* ; Save the AX and BX registers in the stack
+	* PUSH    AX
+	* PUSH    BX
+
+	* ; Restore the original values
+	* POP	BX
+	* POP	AX
+###################
+Recursion:
+	* A recursive procedure is one that calls itself. There are two kind of recursion: direct and indirect. In direct recursion, the procedure calls itself and in indirect recursion, the first procedure calls a second procedure, which in turn calls the first procedure.
+###################
+Macros:
+	* Writing a macro is another way of ensuring modular programming in assembly language.
+	; A macro with two parameters
+	; Implements the write system call
+	   %macro write_string 2 
+	      mov   eax, 4
+	      mov   ebx, 1
+	      mov   ecx, %1
+	      mov   edx, %2
+	      int   80h
+	   %endmacro
+   _start:                     ;tell linker entry point
+   write_string msg1, len1               
+   write_string msg2, len2    
+   write_string msg3, len3  
+###################
+Creating and Opening a File:
+    * Put the system call sys_creat() number 8, in the EAX register.
+    * Put the filename in the EBX register.
+    * Put the file permissions in the ECX register.
+
+Opening an Existing File:
+    * Put the system call sys_open() number 5, in the EAX register.
+    * Put the filename in the EBX register.
+    * Put the file access mode in the ECX register.
+    * Put the file permissions in the EDX register.
+
+Reading from a File:
+    * Put the system call sys_read() number 3, in the EAX register.
+    * Put the file descriptor in the EBX register.
+    * Put the pointer to the input buffer in the ECX register.
+    * Put the buffer size, i.e., the number of bytes to read, in the EDX register.
+
+Writing to a File:
+    * Put the system call sys_write() number 4, in the EAX register.
+    * Put the file descriptor in the EBX register.
+    * Put the pointer to the output buffer in the ECX register.
+    * Put the buffer size, i.e., the number of bytes to write, in the EDX register.
+
+Closing a File:
+	* Put the system call sys_close() number 6, in the EAX register.
+	* Put the file descriptor in the EBX register.
+###################
